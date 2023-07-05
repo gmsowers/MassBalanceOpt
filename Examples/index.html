@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · MassBalanceOpt.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">MassBalanceOpt.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Introduction</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Mixer,-StoicReactor,-Separator"><span>Mixer, StoicReactor, Separator</span></a></li><li><a class="tocitem" href="#Simple-Ethylene-Plant"><span>Simple Ethylene Plant</span></a></li></ul></li><li><a class="tocitem" href="../MassBalanceOpt/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Mixer,-StoicReactor,-Separator"><a class="docs-heading-anchor" href="#Mixer,-StoicReactor,-Separator">Mixer, StoicReactor, Separator</a><a id="Mixer,-StoicReactor,-Separator-1"></a><a class="docs-heading-anchor-permalink" href="#Mixer,-StoicReactor,-Separator" title="Permalink"></a></h2><p>This is an example of a simple flowsheet with a <code>Mixer</code>, <code>StoicReactor</code>, and <code>Separator</code>.</p><p>Add the package from the Julia REPL in the usual way; type <code>]</code> to enter the Pkg REPL mode and run</p><pre><code class="nohighlight hljs">pkg&gt; add MassBalanceOpt</code></pre><p>To do anything useful you&#39;ll also need three other packages:</p><pre><code class="nohighlight hljs">pkg&gt; add JuMP Ipopt OrderedCollections</code></pre><p>Then import the packages:</p><pre><code class="language-julia hljs">using MassBalanceOpt, JuMP, Ipopt, OrderedCollections</code></pre><p>Create a JuMP model and a <code>Flowsheet</code> to hold the blocks and streams:</p><pre><code class="language-julia hljs">m = Model(Ipopt.Optimizer); fs = Flowsheet();</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Flowsheet(
+   name=index   )</code></pre><p>Suppose we have a feed stream of pure component <code>A</code> that mixes with a recycle stream and is fed to a reactor, where the reaction <code>A =&gt; B + C</code> takes place with a specified conversion of component <code>A</code>. The reactor effluent is fed to a distillation column where component <code>C</code> and most of <code>B</code> goes overhead, with unreacted <code>A</code> and a small amount of <code>B</code> going out the bottom and back to the feed header. To create the streams we need to first make some component groups:</p><pre><code class="language-julia hljs">c_A   = @components A
+c_AB  = @components A B
+c_BC  = @components B C
+c_all = @components A B C</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">OrderedCollections.OrderedSet{Symbol} with 3 elements:
+  :A
+  :B
+  :C</code></pre><p>Now we can create the feed, recycle, and reactor inlet streams:</p><pre><code class="language-julia hljs">(feed, recycle, rx_in) = @streams begin
+    feed   , c_A
+    recycle, c_AB
+    rx_in  , c_AB
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(Stream(feed, fs=index, basis=FRAC, components=[A]), Stream(recycle, fs=index, basis=FRAC, components=[A, B]), Stream(rx_in, fs=index, basis=FRAC, components=[A, B]))</code></pre><p>The feed and recycle streams flow into a <code>Mixer</code> block named <code>feedhdr</code>:</p><pre><code class="language-julia hljs">feedhdr = @block(feedhdr, Mixer, [feed, recycle], rx_in)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Mixer(in=[feed, recycle], out=[rx_in])</code></pre><p>Here&#39;s what the model looks like so far:</p><pre><code class="language-julia hljs">print_model(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+feedhdr_feed_mass                 ==              1|              |              |             1|
+feedhdr_feed_A_massfrac           ==              1|              |              |             1|
+feedhdr_recycle_mass              ==              1|              |              |             1|
+feedhdr_recycle_A_massfrac        ==            0.5|              |              |           0.5|
+feedhdr_recycle_B_massfrac        ==            0.5|              |              |           0.5|
+feedhdr_rx_in_mass                                 |              |              |              |
+feedhdr_rx_in_A_massfrac                           |              |              |              |
+feedhdr_rx_in_B_massfrac                           |              |              |              |
+8 variables
+
+feedhdr_total_mass_balance : feedhdr_feed_mass + feedhdr_recycle_mass - feedhdr_rx_in_mass == 0
+feedhdr_A_mass_balance : feedhdr_feed_A_massfrac*feedhdr_feed_mass + feedhdr_recycle_A_massfrac*feedhdr_recycle_mass - feedhdr_rx_in_mass*feedhdr_rx_in_A_massfrac == 0
+feedhdr_B_mass_balance : feedhdr_recycle_B_massfrac*feedhdr_recycle_mass - feedhdr_rx_in_mass*feedhdr_rx_in_B_massfrac == 0
+feedhdr_feed_mass == 1
+feedhdr_feed_A_massfrac == 1
+feedhdr_recycle_mass == 1
+feedhdr_recycle_A_massfrac == 0.5
+feedhdr_recycle_B_massfrac == 0.5
+8 equations</code></pre><p>The two inlet streams to <code>feedhdr</code> have fixed flow rates and compositions that are set to default values when the block was created. The <code>recycle</code> stream flow rate and composition will eventually become free variables after the rest of the model is built, but right now we need to provide values for the fixed variables:</p><pre><code class="language-julia hljs">@values begin
+    feedhdr_feed_mass          = 10_000.0
+    feedhdr_recycle_mass       = 2_000.0
+    feedhdr_recycle_A_massfrac = 0.99
+    feedhdr_recycle_B_massfrac = 0.01
+end
+print_fixed(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+feedhdr_feed_mass                 ==          10000|              |              |         10000|
+feedhdr_feed_A_massfrac           ==              1|              |              |             1|
+feedhdr_recycle_mass              ==           2000|              |              |          2000|
+feedhdr_recycle_A_massfrac        ==           0.99|              |              |          0.99|
+feedhdr_recycle_B_massfrac        ==           0.01|              |              |          0.01|
+5 variables</code></pre><p>Now we can estimate start values for the free variables in block <code>feedhdr</code>:</p><pre><code class="language-julia hljs">set_start_values(feedhdr)
+print_vars(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+feedhdr_feed_mass                 ==          10000|              |              |         10000|
+feedhdr_feed_A_massfrac           ==              1|              |              |             1|
+feedhdr_recycle_mass              ==           2000|              |              |          2000|
+feedhdr_recycle_A_massfrac        ==           0.99|              |              |          0.99|
+feedhdr_recycle_B_massfrac        ==           0.01|              |              |          0.01|
+feedhdr_rx_in_mass                                 |              |              |         12000|
+feedhdr_rx_in_A_massfrac                           |              |              |     0.9983333|
+feedhdr_rx_in_B_massfrac                           |              |              |   0.001666667|
+8 variables</code></pre><p>Now we can create the reactor outlet stream and the reactor block:</p><pre><code class="language-julia hljs">rx_out = @stream(rx_out, c_all)
+rx_stoic = @stoic A =&gt; B + C    # Reaction stoichiometry
+mw = Dict(:A =&gt; 30.0, :B =&gt; 15.0, :C =&gt; 10.0)    # Molecular weights
+conv = OrderedDict(1 =&gt; (c=:A, X=0.8))    # Conversion in reaction 1 (A =&gt; B + C)
+rx = @block(rx, StoicReactor, rx_in, rx_out, rx_stoic, mw, conv)
+print_vars(rx)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+rx_rx_in_mass                     ==              1|              |              |             1|
+rx_rx_in_A_massfrac               ==            0.5|              |              |           0.5|
+rx_rx_in_B_massfrac               ==            0.5|              |              |           0.5|
+rx_rx_out_mass                                     |              |              |              |
+rx_rx_out_A_massfrac                               |              |              |              |
+rx_rx_out_B_massfrac                               |              |              |              |
+rx_rx_out_C_massfrac                               |              |              |              |
+rx_rx_in_A_mass                                    |              |              |              |
+rx_rx_in_B_mass                                    |              |              |              |
+rx_rx_out_A_mass                                   |              |              |              |
+rx_rx_out_B_mass                                   |              |              |              |
+rx_rx_out_C_mass                                   |              |              |              |
+rx_rx_in_A_moles                                   |              |              |              |
+rx_rx_in_B_moles                                   |              |              |              |
+rx_rx_out_A_moles                                  |              |              |              |
+rx_rx_out_B_moles                                  |              |              |              |
+rx_rx_out_C_moles                                  |              |              |              |
+rx_extent_rx_1                                     |              |              |              |
+rx_conv_A_rx_1                    ==            0.8|              |              |           0.8|
+19 variables</code></pre><p>Notice that the reactor inlet stream mass flow rate and composition are fixed to default values. We need to <code>connect</code> the stream <code>rx_in</code> so that the mass flow rate and composition of stream <code>rx_in</code> in block <code>rx</code> are equal to the mass flow rate and composition of <code>rx_in</code> in block <code>feedhdr</code>. Then we can estimate the start values and solve the model:</p><pre><code class="language-julia hljs">connect(rx_in)
+set_start_values(rx)
+@solve
+print_vars(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:       50
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:        7
+
+Total number of variables............................:       21
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       21
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 9.09e-13 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+
+Number of Iterations....: 0
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   9.0949470177292824e-13    9.0949470177292824e-13
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   9.0949470177292824e-13    9.0949470177292824e-13
+
+
+Number of objective function evaluations             = 1
+Number of objective gradient evaluations             = 1
+Number of equality constraint evaluations            = 1
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 1
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 0
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.
+              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+feedhdr_feed_mass                 ==          10000|              |              |         10000|
+feedhdr_feed_A_massfrac           ==              1|              |              |             1|
+feedhdr_recycle_mass              ==           2000|              |              |          2000|
+feedhdr_recycle_A_massfrac        ==           0.99|              |              |          0.99|
+feedhdr_recycle_B_massfrac        ==           0.01|              |              |          0.01|
+feedhdr_rx_in_mass                            12000|              |              |         12000|
+feedhdr_rx_in_A_massfrac                  0.9983333|              |              |     0.9983333|
+feedhdr_rx_in_B_massfrac                0.001666667|              |              |   0.001666667|
+rx_rx_in_mass                                 12000|              |              |         12000|
+rx_rx_in_A_massfrac                       0.9983333|              |              |     0.9983333|
+rx_rx_in_B_massfrac                     0.001666667|              |              |   0.001666667|
+rx_rx_out_mass                             10402.67|              |              |      10402.67|
+rx_rx_out_A_massfrac                      0.2303256|              |              |     0.2303256|
+rx_rx_out_B_massfrac                      0.4625737|              |              |     0.4625737|
+rx_rx_out_C_massfrac                      0.3071007|              |              |     0.3071007|
+rx_rx_in_A_mass                               11980|              |              |         11980|
+rx_rx_in_B_mass                                  20|              |              |            20|
+rx_rx_out_A_mass                               2396|              |              |          2396|
+rx_rx_out_B_mass                               4812|              |              |          4812|
+rx_rx_out_C_mass                           3194.667|              |              |      3194.667|
+rx_rx_in_A_moles                           399.3333|              |              |      399.3333|
+rx_rx_in_B_moles                           1.333333|              |              |      1.333333|
+rx_rx_out_A_moles                          79.86667|              |              |      79.86667|
+rx_rx_out_B_moles                             320.8|              |              |         320.8|
+rx_rx_out_C_moles                          319.4667|              |              |      319.4667|
+rx_extent_rx_1                             319.4667|              |              |      319.4667|
+rx_conv_A_rx_1                    ==            0.8|              |              |           0.8|
+27 variables</code></pre><p>The solver converged immediately because the start value estimates were equal to the values at the solution. This won&#39;t always be the case. Now we can create the block that models the distillation column:</p><pre><code class="language-julia hljs">product = @stream(product, c_BC)
+col = @block(col, Separator, rx_out, [product, recycle])
+print_fixed(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+col_rx_out_mass                   ==              1|              |              |             1|
+col_rx_out_A_massfrac             ==      0.3333333|              |              |     0.3333333|
+col_rx_out_B_massfrac             ==      0.3333333|              |              |     0.3333333|
+col_rx_out_C_massfrac             ==      0.3333333|              |              |     0.3333333|
+col_B_recycle_split               ==            0.5|              |              |           0.5|
+5 variables</code></pre><p>We connect the stream <code>rx_out</code> and set the value of the split fraction of component <code>B</code> into the <code>recycle</code> stream. We don&#39;t need to specify split fractions for <code>A</code> or <code>C</code> because the component set specifications force all <code>A</code> into the <code>recycle</code> stream and all <code>C</code> into the <code>product</code> stream.</p><pre><code class="language-julia hljs">connect(rx_out)
+@set col_B_recycle_split = 0.01
+set_start_values(col)
+@solve
+print_vars(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:       99
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:       17
+
+Total number of variables............................:       41
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       41
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 9.09e-13 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+
+Number of Iterations....: 0
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   9.0949470177292824e-13    9.0949470177292824e-13
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   9.0949470177292824e-13    9.0949470177292824e-13
+
+
+Number of objective function evaluations             = 1
+Number of objective gradient evaluations             = 1
+Number of equality constraint evaluations            = 1
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 1
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 0
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.
+              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+col_rx_out_mass                            10402.67|              |              |      10402.67|
+col_rx_out_A_massfrac                     0.2303256|              |              |     0.2303256|
+col_rx_out_B_massfrac                     0.4625737|              |              |     0.4625737|
+col_rx_out_C_massfrac                     0.3071007|              |              |     0.3071007|
+col_product_mass                           7958.547|              |              |      7958.547|
+col_product_B_massfrac                    0.5985867|              |              |     0.5985867|
+col_product_C_massfrac                    0.4014133|              |              |     0.4014133|
+col_recycle_mass                            2444.12|              |              |       2444.12|
+col_recycle_A_massfrac                    0.9803119|              |              |     0.9803119|
+col_recycle_B_massfrac                   0.01968807|              |              |    0.01968807|
+col_rx_out_A_mass                              2396|              |              |          2396|
+col_rx_out_B_mass                              4812|              |              |          4812|
+col_rx_out_C_mass                          3194.667|              |              |      3194.667|
+col_product_B_mass                          4763.88|              |              |       4763.88|
+col_product_C_mass                         3194.667|              |              |      3194.667|
+col_recycle_A_mass                             2396|              |              |          2396|
+col_recycle_B_mass                            48.12|              |              |         48.12|
+col_A_recycle_split                               1|              |              |             1|
+col_B_product_split                            0.99|              |              |          0.99|
+col_B_recycle_split               ==           0.01|              |              |          0.01|
+col_C_product_split                               1|              |              |             1|
+21 variables</code></pre><p>We don&#39;t really want to fix <code>col_B_recycle_split</code> though. A controller will be controlling the mass fraction of <code>B</code> in the <code>recycle</code> stream to a setpoint, so we want to fix the <code>B</code> mass fraction in the <code>recycle</code> stream and free <code>col_B_recycle_split</code>. This is called &quot;flipping&quot; the specs on the two variables, and is done like this:</p><pre><code class="language-julia hljs">@specs col_B_recycle_split ~ col_recycle_B_massfrac
+@set col_recycle_B_massfrac = 0.01    # Set the mass fraction of B in the recycle stream
+@solve
+print_vars(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:      100
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:       17
+
+Total number of variables............................:       41
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       41
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 2.37e+01 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  0.0000000e+00 2.29e-01 0.00e+00  -1.0 2.39e+01    -  1.00e+00 1.00e+00h  1
+   2  0.0000000e+00 9.09e-13 0.00e+00  -3.8 9.48e-05    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 2
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   9.0949470177292824e-13    9.0949470177292824e-13
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   9.0949470177292824e-13    9.0949470177292824e-13
+
+
+Number of objective function evaluations             = 3
+Number of objective gradient evaluations             = 3
+Number of equality constraint evaluations            = 3
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 3
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 2
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.
+              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+col_rx_out_mass                            10402.67|              |              |      10402.67|
+col_rx_out_A_massfrac                     0.2303256|              |              |     0.2303256|
+col_rx_out_B_massfrac                     0.4625737|              |              |     0.4625737|
+col_rx_out_C_massfrac                     0.3071007|              |              |     0.3071007|
+col_product_mass                           7982.465|              |              |      7958.547|
+col_product_B_massfrac                    0.5997894|              |              |     0.5985867|
+col_product_C_massfrac                    0.4002106|              |              |     0.4014133|
+col_recycle_mass                           2420.202|              |              |       2444.12|
+col_recycle_A_massfrac                         0.99|              |              |     0.9803119|
+col_recycle_B_massfrac            ==           0.01|              |              |          0.01|
+col_rx_out_A_mass                              2396|              |              |          2396|
+col_rx_out_B_mass                              4812|              |              |          4812|
+col_rx_out_C_mass                          3194.667|              |              |      3194.667|
+col_product_B_mass                         4787.798|              |              |       4763.88|
+col_product_C_mass                         3194.667|              |              |      3194.667|
+col_recycle_A_mass                             2396|              |              |          2396|
+col_recycle_B_mass                         24.20202|              |              |         48.12|
+col_A_recycle_split                               1|              |              |             1|
+col_B_product_split                       0.9949705|              |              |          0.99|
+col_B_recycle_split                     0.005029514|              |              |          0.01|
+col_C_product_split                               1|              |              |             1|
+21 variables</code></pre><p>Finally we can connect the <code>recycle</code> stream and solve the complete problem:</p><pre><code class="language-julia hljs">connect(recycle)
+@solve
+print_vars(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:      110
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:       19
+
+Total number of variables............................:       44
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       44
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 4.44e+02 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  0.0000000e+00 1.11e+00 0.00e+00  -1.0 5.25e+02    -  1.00e+00 1.00e+00h  1
+   2  0.0000000e+00 7.15e-05 0.00e+00  -2.5 8.06e-01    -  1.00e+00 1.00e+00h  1
+   3  0.0000000e+00 1.82e-12 0.00e+00  -8.6 2.08e-08    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 3
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   1.8189894035458565e-12    1.8189894035458565e-12
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   1.8189894035458565e-12    1.8189894035458565e-12
+
+
+Number of objective function evaluations             = 4
+Number of objective gradient evaluations             = 4
+Number of equality constraint evaluations            = 4
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 4
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 3
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.
+              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+feedhdr_feed_mass                 ==          10000|              |              |         10000|
+feedhdr_feed_A_massfrac           ==              1|              |              |             1|
+feedhdr_recycle_mass                       2525.253|              |              |          2000|
+feedhdr_recycle_A_massfrac                     0.99|              |              |          0.99|
+feedhdr_recycle_B_massfrac                     0.01|              |              |          0.01|
+feedhdr_rx_in_mass                         12525.25|              |              |         12000|
+feedhdr_rx_in_A_massfrac                  0.9979839|              |              |     0.9983333|
+feedhdr_rx_in_B_massfrac                0.002016129|              |              |   0.001666667|
+rx_rx_in_mass                              12525.25|              |              |         12000|
+rx_rx_in_A_massfrac                       0.9979839|              |              |     0.9983333|
+rx_rx_in_B_massfrac                     0.002016129|              |              |   0.001666667|
+rx_rx_out_mass                             10858.59|              |              |      10402.67|
+rx_rx_out_A_massfrac                      0.2302326|              |              |     0.2303256|
+rx_rx_out_B_massfrac                      0.4627907|              |              |     0.4625737|
+rx_rx_out_C_massfrac                      0.3069767|              |              |     0.3071007|
+rx_rx_in_A_mass                               12500|              |              |         11980|
+rx_rx_in_B_mass                            25.25253|              |              |            20|
+rx_rx_out_A_mass                               2500|              |              |          2396|
+rx_rx_out_B_mass                           5025.253|              |              |          4812|
+rx_rx_out_C_mass                           3333.333|              |              |      3194.667|
+rx_rx_in_A_moles                           416.6667|              |              |      399.3333|
+rx_rx_in_B_moles                           1.683502|              |              |      1.333333|
+rx_rx_out_A_moles                          83.33333|              |              |      79.86667|
+rx_rx_out_B_moles                          335.0168|              |              |         320.8|
+rx_rx_out_C_moles                          333.3333|              |              |      319.4667|
+rx_extent_rx_1                             333.3333|              |              |      319.4667|
+rx_conv_A_rx_1                    ==            0.8|              |              |           0.8|
+col_rx_out_mass                            10858.59|              |              |      10402.67|
+col_rx_out_A_massfrac                     0.2302326|              |              |     0.2303256|
+col_rx_out_B_massfrac                     0.4627907|              |              |     0.4625737|
+col_rx_out_C_massfrac                     0.3069767|              |              |     0.3071007|
+col_product_mass                           8333.333|              |              |      7958.547|
+col_product_B_massfrac                          0.6|              |              |     0.5985867|
+col_product_C_massfrac                          0.4|              |              |     0.4014133|
+col_recycle_mass                           2525.253|              |              |       2444.12|
+col_recycle_A_massfrac                         0.99|              |              |     0.9803119|
+col_recycle_B_massfrac            ==           0.01|              |              |          0.01|
+col_rx_out_A_mass                              2500|              |              |          2396|
+col_rx_out_B_mass                          5025.253|              |              |          4812|
+col_rx_out_C_mass                          3333.333|              |              |      3194.667|
+col_product_B_mass                             5000|              |              |       4763.88|
+col_product_C_mass                         3333.333|              |              |      3194.667|
+col_recycle_A_mass                             2500|              |              |          2396|
+col_recycle_B_mass                         25.25253|              |              |         48.12|
+col_A_recycle_split                               1|              |              |             1|
+col_B_product_split                       0.9949749|              |              |          0.99|
+col_B_recycle_split                     0.005025126|              |              |          0.01|
+col_C_product_split                               1|              |              |             1|
+48 variables</code></pre><h2 id="Simple-Ethylene-Plant"><a class="docs-heading-anchor" href="#Simple-Ethylene-Plant">Simple Ethylene Plant</a><a id="Simple-Ethylene-Plant-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-Ethylene-Plant" title="Permalink"></a></h2><p>This is an example of the use of the MassBalanceOpt package to build a simple model of an ethylene plant and solve it with <code>JuMP</code>. Here is a block diagram of the flowsheet:</p><p><img src="../../assets/C2plant.png" alt/></p><p>Create a <code>JuMP</code> model that uses the <code>Ipopt</code> solver:</p><pre><code class="language-julia hljs">m = Model(Ipopt.Optimizer)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A JuMP Model
+Feasibility problem with:
+Variables: 0
+Model mode: AUTOMATIC
+CachingOptimizer state: EMPTY_OPTIMIZER
+Solver name: Ipopt</code></pre><p>Create a <code>Flowsheet</code> to contain the variables and equations of the model. The default name of a flowsheet is <code>:index</code>. The <code>:index</code> flowsheet does not have a parent flowsheet.</p><pre><code class="language-julia hljs">fs = Flowsheet()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Flowsheet(
+   name=index   )</code></pre><p>The plant will have two feed streams: ethane and propane, each containing only one component. A component is simply a <code>Symbol</code>; it doesn&#39;t have any attributes like a chemical formula or molecular weight.</p><pre><code class="language-julia hljs">comps_eth_feed = @components c2h6
+comps_pro_feed = @components c3h8</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">OrderedCollections.OrderedSet{Symbol} with 1 element:
+  :c3h8</code></pre><p>The feed streams are mixed with ethane and propane recycle streams. The component sets for the recycle streams are:</p><pre><code class="language-julia hljs">comps_eth_rec = @components c2h4 c2h6
+comps_pro_rec = @components c3h6 c3h8 mapd</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">OrderedCollections.OrderedSet{Symbol} with 3 elements:
+  :c3h6
+  :c3h8
+  :mapd</code></pre><p>The fresh feed streams are mixed with their recycle streams in <code>Mixer</code> blocks. These blocks need streams for the fresh feeds, recycles, and the mixed feed/recycle:</p><pre><code class="language-julia hljs">(ethfd, ethre, ethf1f5, profd, prore, prof1f5) = @streams begin
+        ethfd   , comps_eth_feed   # Ethane fresh feed
+        ethre   , comps_eth_rec    # Ethane recycle
+        ethf1f5 , comps_eth_rec    # Mixed fresh ethane feed and ethane recycle to furnaces F-1 through F-5.
+        profd   , comps_pro_feed   # Propane fresh feed
+        prore   , comps_pro_rec    # Propane recycle
+        prof1f5 , comps_pro_rec    # Mixed fresh propane feed and propane recycle to furnaces F-1 through F-5.
+    end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(Stream(ethfd, fs=index, basis=FRAC, components=[c2h6]), Stream(ethre, fs=index, basis=FRAC, components=[c2h4, c2h6]), Stream(ethf1f5, fs=index, basis=FRAC, components=[c2h4, c2h6]), Stream(profd, fs=index, basis=FRAC, components=[c3h8]), Stream(prore, fs=index, basis=FRAC, components=[c3h6, c3h8, mapd]), Stream(prof1f5, fs=index, basis=FRAC, components=[c3h6, c3h8, mapd]))</code></pre><p>Create <code>Mixer</code> blocks that represent the ethane and propane feed headers:</p><pre><code class="language-julia hljs">ethhdr = @block(ethhdr, Mixer, [ethfd, ethre], ethf1f5)
+prohdr = @block(prohdr, Mixer, [profd, prore], prof1f5)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Mixer(in=[profd, prore], out=[prof1f5])</code></pre><p>Print the equations and variables in the model so far:</p><pre><code class="language-julia hljs">print_model(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+ethhdr_ethfd_mass                 ==              1|              |              |             1|
+ethhdr_ethfd_c2h6_massfrac        ==              1|              |              |             1|
+ethhdr_ethre_mass                 ==              1|              |              |             1|
+ethhdr_ethre_c2h4_massfrac        ==            0.5|              |              |           0.5|
+ethhdr_ethre_c2h6_massfrac        ==            0.5|              |              |           0.5|
+ethhdr_ethf1f5_mass                                |              |              |              |
+ethhdr_ethf1f5_c2h4_massfrac                       |              |              |              |
+ethhdr_ethf1f5_c2h6_massfrac                       |              |              |              |
+prohdr_profd_mass                 ==              1|              |              |             1|
+prohdr_profd_c3h8_massfrac        ==              1|              |              |             1|
+prohdr_prore_mass                 ==              1|              |              |             1|
+prohdr_prore_c3h6_massfrac        ==      0.3333333|              |              |     0.3333333|
+prohdr_prore_c3h8_massfrac        ==      0.3333333|              |              |     0.3333333|
+prohdr_prore_mapd_massfrac        ==      0.3333333|              |              |     0.3333333|
+prohdr_prof1f5_mass                                |              |              |              |
+prohdr_prof1f5_c3h6_massfrac                       |              |              |              |
+prohdr_prof1f5_c3h8_massfrac                       |              |              |              |
+prohdr_prof1f5_mapd_massfrac                       |              |              |              |
+18 variables
+
+ethhdr_total_mass_balance : ethhdr_ethfd_mass + ethhdr_ethre_mass - ethhdr_ethf1f5_mass == 0
+prohdr_total_mass_balance : prohdr_profd_mass + prohdr_prore_mass - prohdr_prof1f5_mass == 0
+ethhdr_c2h4_mass_balance : ethhdr_ethre_c2h4_massfrac*ethhdr_ethre_mass - ethhdr_ethf1f5_mass*ethhdr_ethf1f5_c2h4_massfrac == 0
+ethhdr_c2h6_mass_balance : ethhdr_ethfd_c2h6_massfrac*ethhdr_ethfd_mass + ethhdr_ethre_c2h6_massfrac*ethhdr_ethre_mass - ethhdr_ethf1f5_mass*ethhdr_ethf1f5_c2h6_massfrac == 0
+prohdr_c3h6_mass_balance : prohdr_prore_c3h6_massfrac*prohdr_prore_mass - prohdr_prof1f5_mass*prohdr_prof1f5_c3h6_massfrac == 0
+prohdr_c3h8_mass_balance : prohdr_profd_c3h8_massfrac*prohdr_profd_mass + prohdr_prore_c3h8_massfrac*prohdr_prore_mass - prohdr_prof1f5_mass*prohdr_prof1f5_c3h8_massfrac == 0
+prohdr_mapd_mass_balance : prohdr_prore_mapd_massfrac*prohdr_prore_mass - prohdr_prof1f5_mass*prohdr_prof1f5_mapd_massfrac == 0
+ethhdr_ethfd_mass == 1
+ethhdr_ethfd_c2h6_massfrac == 1
+ethhdr_ethre_mass == 1
+ethhdr_ethre_c2h4_massfrac == 0.5
+ethhdr_ethre_c2h6_massfrac == 0.5
+prohdr_profd_mass == 1
+prohdr_profd_c3h8_massfrac == 1
+prohdr_prore_mass == 1
+prohdr_prore_c3h6_massfrac == 0.3333333333333333
+prohdr_prore_c3h8_massfrac == 0.3333333333333333
+prohdr_prore_mapd_massfrac == 0.3333333333333333
+18 equations</code></pre><p>Note that the feed stream flow rates and compositions are fixed at default values. The recycle stream flow rates and compositions are also fixed for now; that will be changed after the rest of the model has been built. Set the values of the fixed variables to more realistic values:</p><pre><code class="language-julia hljs">@values begin
+    ethhdr_ethfd_mass = 80_000.0
+    prohdr_profd_mass = 34_000.0
+    ethhdr_ethre_mass = 39_000.0
+    prohdr_prore_mass = 5_000.0
+
+    ethhdr_ethre_c2h4_massfrac = 0.005
+    ethhdr_ethre_c2h6_massfrac = 0.995
+    prohdr_prore_c3h6_massfrac = 0.005
+    prohdr_prore_c3h8_massfrac = 0.96
+    prohdr_prore_mapd_massfrac = 0.035
+end</code></pre><p>The function <code>set_start_values</code> will calculate initial guesses for the free variables:</p><pre><code class="language-julia hljs">set_start_values([ethhdr, prohdr])
+print_vars(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+ethhdr_ethfd_mass                 ==          80000|              |              |         80000|
+ethhdr_ethfd_c2h6_massfrac        ==              1|              |              |             1|
+ethhdr_ethre_mass                 ==          39000|              |              |         39000|
+ethhdr_ethre_c2h4_massfrac        ==          0.005|              |              |         0.005|
+ethhdr_ethre_c2h6_massfrac        ==          0.995|              |              |         0.995|
+ethhdr_ethf1f5_mass                                |              |              |        119000|
+ethhdr_ethf1f5_c2h4_massfrac                       |              |              |   0.001638655|
+ethhdr_ethf1f5_c2h6_massfrac                       |              |              |     0.9983613|
+prohdr_profd_mass                 ==          34000|              |              |         34000|
+prohdr_profd_c3h8_massfrac        ==              1|              |              |             1|
+prohdr_prore_mass                 ==           5000|              |              |          5000|
+prohdr_prore_c3h6_massfrac        ==          0.005|              |              |         0.005|
+prohdr_prore_c3h8_massfrac        ==           0.96|              |              |          0.96|
+prohdr_prore_mapd_massfrac        ==          0.035|              |              |         0.035|
+prohdr_prof1f5_mass                                |              |              |         39000|
+prohdr_prof1f5_c3h6_massfrac                       |              |              |  0.0006410256|
+prohdr_prof1f5_c3h8_massfrac                       |              |              |     0.9948718|
+prohdr_prof1f5_mapd_massfrac                       |              |              |   0.004487179|
+18 variables</code></pre><p>Solve the model:</p><pre><code class="language-julia hljs">@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:       12
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:        5
+
+Total number of variables............................:        7
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:        7
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 0.00e+00 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+
+Number of Iterations....: 0
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   0.0000000000000000e+00    0.0000000000000000e+00
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   0.0000000000000000e+00    0.0000000000000000e+00
+
+
+Number of objective function evaluations             = 1
+Number of objective gradient evaluations             = 1
+Number of equality constraint evaluations            = 1
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 1
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 0
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.</code></pre><p>The solver converged immediately because <code>set_start_values</code> is able to calculate the values of the free variables exactly, in this case.</p><p>The mixed feed and recycle streams are fed to the cracking furnaces, which are reactors that thermally crack the feeds into a mixture called &quot;cracked gas.&quot; In this simple model the cracked gas will consist of the following components:</p><pre><code class="language-julia hljs">comps_cg = @components h2 ch4 c2h2 c2h4 c2h6 c3h6 c3h8 mapd c4s pygas</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">OrderedCollections.OrderedSet{Symbol} with 10 elements:
+  :h2
+  :ch4
+  :c2h2
+  :c2h4
+  :c2h6
+  :c3h6
+  :c3h8
+  :mapd
+  :c4s
+  :pygas</code></pre><p>The ethane and propane feeds are cracked in separate furnaces. The purpose of the model is to calculate the optimal flow rates of ethane and propane feed, given constraints on furnace capacity. The cracked gas streams leaving the ethane and propane furnaces are:</p><pre><code class="language-julia hljs">(cgethf1f5, cgprof1f5) = @streams begin
+    cgethf1f5 , comps_cg, (basis=FLOW)
+    cgprof1f5 , comps_cg, (basis=FLOW)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(Stream(cgethf1f5, fs=index, basis=FLOW, components=[h2, ch4, c2h2, c2h4, c2h6, c3h6, c3h8, mapd, c4s, pygas]), Stream(cgprof1f5, fs=index, basis=FLOW, components=[h2, ch4, c2h2, c2h4, c2h6, c3h6, c3h8, mapd, c4s, pygas]))</code></pre><p>The cracked gas streams a <code>FLOW</code> basis because their mass flow rates may be zero at the solution, which would make the equations based on a mass fraction formulation become singular. The furnaces are modeled with a <code>MultiYieldReactor</code> with two feeds: <code>:eth</code> and <code>:pro</code>.</p><pre><code class="language-julia hljs">f1f5 = @block(f1f5, MultiYieldReactor, [ethf1f5, prof1f5], [cgethf1f5, cgprof1f5], [:eth, :pro], :furn)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MultiYieldReactor(in=[ethf1f5, prof1f5], out=[cgethf1f5, cgprof1f5])</code></pre><p>The values of the fixed variables in the furnace model are:</p><pre><code class="language-julia hljs">print_fixed(f1f5)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+f1f5_ethf1f5_mass                 ==              1|              |              |             1|
+f1f5_ethf1f5_c2h4_massfrac        ==            0.5|              |              |           0.5|
+f1f5_ethf1f5_c2h6_massfrac        ==            0.5|              |              |           0.5|
+f1f5_prof1f5_mass                 ==              1|              |              |             1|
+f1f5_prof1f5_c3h6_massfrac        ==      0.3333333|              |              |     0.3333333|
+f1f5_prof1f5_c3h8_massfrac        ==      0.3333333|              |              |     0.3333333|
+f1f5_prof1f5_mapd_massfrac        ==      0.3333333|              |              |     0.3333333|
+f1f5_eth_rate                     ==              1|              |              |             1|
+f1f5_pro_rate                     ==              1|              |              |             1|
+f1f5_eth_y_h2_from_c2h4           ==              0|              |              |             0|
+f1f5_eth_y_ch4_from_c2h4          ==              0|              |              |             0|
+f1f5_eth_y_c2h2_from_c2h4         ==              0|              |              |             0|
+f1f5_eth_y_c2h6_from_c2h4         ==              0|              |              |             0|
+f1f5_eth_y_c3h6_from_c2h4         ==              0|              |              |             0|
+f1f5_eth_y_c3h8_from_c2h4         ==              0|              |              |             0|
+f1f5_eth_y_mapd_from_c2h4         ==              0|              |              |             0|
+f1f5_eth_y_c4s_from_c2h4          ==              0|              |              |             0|
+f1f5_eth_y_pygas_from_c2h4        ==              0|              |              |             0|
+f1f5_eth_y_h2_from_c2h6           ==              0|              |              |             0|
+f1f5_eth_y_ch4_from_c2h6          ==              0|              |              |             0|
+f1f5_eth_y_c2h2_from_c2h6         ==              0|              |              |             0|
+f1f5_eth_y_c2h4_from_c2h6         ==              0|              |              |             0|
+f1f5_eth_y_c3h6_from_c2h6         ==              0|              |              |             0|
+f1f5_eth_y_c3h8_from_c2h6         ==              0|              |              |             0|
+f1f5_eth_y_mapd_from_c2h6         ==              0|              |              |             0|
+f1f5_eth_y_c4s_from_c2h6          ==              0|              |              |             0|
+f1f5_eth_y_pygas_from_c2h6        ==              0|              |              |             0|
+f1f5_pro_y_h2_from_c3h6           ==              0|              |              |             0|
+f1f5_pro_y_ch4_from_c3h6          ==              0|              |              |             0|
+f1f5_pro_y_c2h2_from_c3h6         ==              0|              |              |             0|
+f1f5_pro_y_c2h4_from_c3h6         ==              0|              |              |             0|
+f1f5_pro_y_c2h6_from_c3h6         ==              0|              |              |             0|
+f1f5_pro_y_c3h8_from_c3h6         ==              0|              |              |             0|
+f1f5_pro_y_mapd_from_c3h6         ==              0|              |              |             0|
+f1f5_pro_y_c4s_from_c3h6          ==              0|              |              |             0|
+f1f5_pro_y_pygas_from_c3h6        ==              0|              |              |             0|
+f1f5_pro_y_h2_from_c3h8           ==              0|              |              |             0|
+f1f5_pro_y_ch4_from_c3h8          ==              0|              |              |             0|
+f1f5_pro_y_c2h2_from_c3h8         ==              0|              |              |             0|
+f1f5_pro_y_c2h4_from_c3h8         ==              0|              |              |             0|
+f1f5_pro_y_c2h6_from_c3h8         ==              0|              |              |             0|
+f1f5_pro_y_c3h6_from_c3h8         ==              0|              |              |             0|
+f1f5_pro_y_mapd_from_c3h8         ==              0|              |              |             0|
+f1f5_pro_y_c4s_from_c3h8          ==              0|              |              |             0|
+f1f5_pro_y_pygas_from_c3h8        ==              0|              |              |             0|
+f1f5_pro_y_h2_from_mapd           ==              0|              |              |             0|
+f1f5_pro_y_ch4_from_mapd          ==              0|              |              |             0|
+f1f5_pro_y_c2h2_from_mapd         ==              0|              |              |             0|
+f1f5_pro_y_c2h4_from_mapd         ==              0|              |              |             0|
+f1f5_pro_y_c2h6_from_mapd         ==              0|              |              |             0|
+f1f5_pro_y_c3h6_from_mapd         ==              0|              |              |             0|
+f1f5_pro_y_c3h8_from_mapd         ==              0|              |              |             0|
+f1f5_pro_y_c4s_from_mapd          ==              0|              |              |             0|
+f1f5_pro_y_pygas_from_mapd        ==              0|              |              |             0|
+54 variables</code></pre><p>The values of the fixed inlet stream variables will become free after the streams are connected (see below). The rest of the fixed variables are inputs to the model that need to be set. The single-pass yields in the furnaces are:</p><pre><code class="language-julia hljs">@values begin
+    f1f5_eth_y_h2_from_c2h6    = 0.0411
+    f1f5_eth_y_ch4_from_c2h6   = 0.05
+    f1f5_eth_y_c2h2_from_c2h6  = 0.003
+    f1f5_eth_y_c2h4_from_c2h6  = 0.495
+    f1f5_eth_y_c3h6_from_c2h6  = 0.0043
+    f1f5_eth_y_c3h8_from_c2h6  = 0.01
+    f1f5_eth_y_mapd_from_c2h6  = 0.0002
+    f1f5_eth_y_c4s_from_c2h6   = 0.03
+    f1f5_eth_y_pygas_from_c2h6 = 0.02
+
+    f1f5_eth_y_h2_from_c2h4    = -0.009
+    f1f5_eth_y_ch4_from_c2h4   = 0.129
+    f1f5_eth_y_c2h2_from_c2h4  = 0.004
+    f1f5_eth_y_c2h6_from_c2h4  = 0.0
+    f1f5_eth_y_c3h6_from_c2h4  = 0.003
+    f1f5_eth_y_c3h8_from_c2h4  = 0.002
+    f1f5_eth_y_mapd_from_c2h4  = 0.0
+    f1f5_eth_y_c4s_from_c2h4   = 0.05
+    f1f5_eth_y_pygas_from_c2h4 = 0.15
+
+    f1f5_pro_y_h2_from_c3h8    = 0.01
+    f1f5_pro_y_ch4_from_c3h8   = 0.21
+    f1f5_pro_y_c2h2_from_c3h8  = 0.004
+    f1f5_pro_y_c2h4_from_c3h8  = 0.35
+    f1f5_pro_y_c2h6_from_c3h8  = 0.04
+    f1f5_pro_y_c3h6_from_c3h8  = 0.16
+    f1f5_pro_y_mapd_from_c3h8  = 0.004
+    f1f5_pro_y_c4s_from_c3h8   = 0.015
+    f1f5_pro_y_pygas_from_c3h8 = 0.025
+
+    f1f5_pro_y_h2_from_c3h6    = -0.0035
+    f1f5_pro_y_ch4_from_c3h6   = 0.15
+    f1f5_pro_y_c2h2_from_c3h6  = 0.005
+    f1f5_pro_y_c2h4_from_c3h6  = 0.04
+    f1f5_pro_y_c2h6_from_c3h6  = 0.004
+    f1f5_pro_y_c3h8_from_c3h6  = 0.0000
+    f1f5_pro_y_mapd_from_c3h6  = 0.002
+    f1f5_pro_y_c4s_from_c3h6   = 0.03
+    f1f5_pro_y_pygas_from_c3h6 = 0.15
+
+    f1f5_pro_y_c3h6_from_mapd  = 1.0
+end</code></pre><p>The flow rates of ethane and propane feed per furnace are:</p><pre><code class="language-julia hljs">@values begin
+    f1f5_eth_rate = 30_000.0
+    f1f5_pro_rate = 40_000.0
+end</code></pre><p>Now that most of the fixed variables have been set, the <code>ethf1f5</code> and <code>prof1f5</code> inlet streams can be connected, which will free the inlet stream variables in the <code>f1f5</code> block and copy the start values from the upstream <code>Mixer</code> blocks into the <code>f1f5</code> block. The <code>set_start_values</code> function can then calculate the rest of the start values:</p><pre><code class="language-julia hljs">connect([ethf1f5, prof1f5])
+set_start_values(f1f5)
+@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:      153
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:       15
+
+Total number of variables............................:       50
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:       50
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 2.84e-14 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+
+Number of Iterations....: 0
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   2.8421709430404007e-14    2.8421709430404007e-14
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   2.8421709430404007e-14    2.8421709430404007e-14
+
+
+Number of objective function evaluations             = 1
+Number of objective gradient evaluations             = 1
+Number of equality constraint evaluations            = 1
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 1
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 0
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.</code></pre><p>The cracked gas streams leaving the furnaces are mixed together in the cracked gas header. The same pattern is used to add additional blocks to the model:</p><ol><li>Define component groups</li><li>Create inlet and outlet streams</li><li>Create the block</li><li>Connect the block&#39;s inlet streams to the upstream block</li><li>Configure variable specifications if necessary</li><li>Set values of the fixed variables</li><li>Call <code>set_start_values</code></li><li>Solve the model and print variables if desired</li></ol><p>To keep the output as concise as possible we&#39;ll avoid solving the model repeatedly in this example. In practice, a solve is usually done after adding each new block. </p><pre><code class="language-julia hljs"># Cracked gas header.
+cgas = @stream(cgas, comps_cg)
+cghdr = @block(cghdr, Mixer, [cgethf1f5, cgprof1f5], cgas)
+connect([cgethf1f5, cgprof1f5])
+set_start_values(cghdr)</code></pre><p>The cracked gas flows to the quench section, where heavy pygas is separated out as a product. In this simple model, there&#39;s only one <code>pygas</code> component, so we&#39;ll pretend that 30% of it is heavy pygas. The outlet stream from the quench section flows to the cracked gas compressor section, where the rest of the pygas is removed.</p><pre><code class="language-julia hljs"># Quench section.
+comps_pg = @components pygas
+(hpygas, cgcfeed) = @streams begin
+    hpygas  , comps_pg
+    cgcfeed , comps_cg
+end
+quench = @block(quench, Separator, cgas, [hpygas, cgcfeed])
+@set quench_pygas_hpygas_split = 0.3
+connect(cgas)
+
+# Cracked gas compressor section.
+comps_pygas  = @components  pygas
+comps_DC2    = @components  h2 ch4 c2h2 c2h4 c2h6 c3h6 c3h8 mapd c4s
+(lpygas, cgcout) = @streams begin
+    lpygas , comps_pygas
+    cgcout , comps_DC2
+end
+cgc = @block(cgc, Separator, cgcfeed, [lpygas, cgcout])
+connect(cgcfeed)
+set_start_values([quench, cgc])</code></pre><p>The cracked gas compressor section outlet stream flows to the front-end deethanizer, which splits it into C2- overhead and C3+ bottoms streams.</p><pre><code class="language-julia hljs"># Front-end deethanizer.
+comps_DC2oh = @components  h2 ch4 c2h2 c2h4 c2h6
+comps_DC2bt = @components  c3h6 c3h8 mapd c4s
+(dc2oh, dc2bt) = @streams begin
+    dc2oh , comps_DC2oh
+    dc2bt , comps_DC2bt
+end
+dc2 = @block(dc2, Separator, cgcout, [dc2oh, dc2bt])
+connect(cgcout)
+set_start_values(dc2)</code></pre><p>The overhead stream from the deethanizer flows to the acetylene reactors, which convert all of the acetylene into ethylene and ethane.</p><pre><code class="language-julia hljs"># Acetylene reactors.
+comps_ARX = @components  h2 ch4 c2h4 c2h6
+arxo = @stream(arxo, comps_ARX)
+arx_stoic = @stoic begin    # Reaction stoichiometry
+    c2h2 + h2  =&gt; c2h4
+    c2h2 + 2h2 =&gt; c2h6
+end
+
+arx_mw = Dict(:c2h2 =&gt; 26.03728,    # Molecular weights of the reacting components
+              :h2   =&gt;  2.01588,
+              :c2h4 =&gt; 28.05316,
+              :c2h6 =&gt; 30.06904)
+
+arx_conv = OrderedDict(1 =&gt; (c=:c2h2, X=0.7))   # C2H2 conversion in reaction 1.
+                                                # Don&#39;t need to specify C2H2 conversion in reaction 2, because
+                                                # C2H2 is not present in the outlet stream component list.
+
+arx = @block(arx, StoicReactor, dc2oh, arxo, arx_stoic, arx_mw, arx_conv)
+connect(dc2oh)
+set_start_values(arx)</code></pre><p>The acetylene reactor outlet stream flows to the cold train/demethanizer. The offgas, containing H2, CH4, and a small amount of C2H4, is separated out as a product.</p><pre><code class="language-julia hljs"># Cold train/demethanizer.
+comps_OG  = @components  h2 ch4 c2h4
+comps_C2S = @components  c2h4 c2h6
+(offgas, dc1bt) = @streams begin
+    offgas , comps_OG
+    dc1bt  , comps_C2S
+end
+ctdc1 = @block(ctdc1, Separator, arxo, [offgas, dc1bt])
+connect(arxo)
+
+# The split fraction of C2H4 in the offgas starts out as a fixed variable. The offgas C2H4 mass fraction is free.
+# To calculate good start values, we have to set the value of the split fraction.
+@set ctdc1_c2h4_offgas_split = 0.001
+set_start_values(ctdc1)
+
+# Now we flip the specs, which frees the offgas C2H4 split fraction and fixes the offgas C2H4 mass fraction.
+# We need to set the offgas C2H4 mass fraction to the desired value.
+@specs(ctdc1_c2h4_offgas_split ~ ctdc1_offgas_c2h4_massfrac)
+@set ctdc1_offgas_c2h4_massfrac = 0.005</code></pre><p>The demethanizer bottoms stream flows to the C2 splitter, which splits it into an ethylene product stream and a recycle stream to the ethane header. The recycle stream is mostly ethane with a small amount of ethylene mixed in.</p><pre><code class="language-julia hljs"># C2 splitter.
+c2h4p = @stream(c2h4p, comps_C2S)
+c2s = @block(c2s, Separator, dc1bt, [c2h4p, ethre])
+
+# Since c2s_c2h4_c2h4p_split is the first split frac, it&#39;s fixed by default. But we prefer to fix
+# c2s_c2h4_ethre_split instead, so flip the specs on those two variables.
+@specs c2s_c2h4_c2h4p_split ~ c2s_c2h4_ethre_split
+
+# Assign values to the fixed split fracs and set the start values.
+@values begin
+    c2s_c2h6_c2h4p_split    = 0.001
+    c2s_c2h4_ethre_split    = 0.003
+end
+connect([dc1bt, ethre])
+set_start_values(c2s)
+
+# Flip the specs to fix the mass fractions and free the split fracs.
+@specs begin
+    c2s_c2h4_ethre_split    ~ c2s_ethre_c2h4_massfrac
+    c2s_c2h4p_c2h6_massfrac ~ c2s_c2h6_c2h4p_split
+end
+
+# Set the values of the fixed mass fractions.
+@values begin
+    c2s_c2h4p_c2h6_massfrac = 0.0008
+    c2s_ethre_c2h4_massfrac = 0.005
+end</code></pre><p>The deethanizer bottoms flows to the depropanizer, which splits it into C3- overhead and C4 bottoms streams.</p><pre><code class="language-julia hljs"># Depropanizer.
+comps_DC3oh   = @components  c3h6 c3h8 mapd
+comps_DC3bt   = @components  c4s
+(dc3oh, c4sp) = @streams begin
+    dc3oh  , comps_DC3oh
+    c4sp   , comps_DC3bt
+end
+
+# The separation is assumed to be clean, so all the split fracs are 1.
+dc3 = @block(dc3, Separator, dc2bt, [dc3oh, c4sp])
+connect(dc2bt)
+set_start_values(dc3)</code></pre><p>The depropanizer overhead C3- stream is fed to the C3 splitter, which produces a propylene product stream and a propane recycle stream.</p><pre><code class="language-julia hljs"># C3 splitter.
+comps_C3Soh   = @components  c3h6 c3h8
+c3h6p = @stream(c3h6p, comps_C3Soh)
+c3s = @block(c3s, Separator, dc3oh, [c3h6p, prore])
+connect(dc3oh)
+
+# Fix c3s_c3h8_c3h6p_split and free c3s_c3h8_prore_split, and set the fixed split fractions.
+@specs c3s_c3h8_c3h6p_split ~ c3s_c3h8_prore_split
+@values begin
+    c3s_c3h6_prore_split = 0.003
+    c3s_c3h8_c3h6p_split = 0.00017
+end
+
+# Calculate the start values.
+set_start_values(c3s)
+
+# Flip the split fracs with the mass fractions, and set the mass fractions.
+@specs begin
+    c3s_prore_c3h6_massfrac ~ c3s_c3h6_prore_split
+    c3s_c3h6p_c3h8_massfrac ~ c3s_c3h8_c3h6p_split
+end
+@set c3s_c3h6p_c3h8_massfrac = 0.0001
+@set c3s_prore_c3h6_massfrac = 0.005
+
+# Connect the propane recycle, and solve the model.
+connect(prore)
+@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:      954
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:      171
+
+Total number of variables............................:      362
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:        0
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:      362
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  0.0000000e+00 3.88e+03 0.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  0.0000000e+00 6.80e+01 0.00e+00  -1.0 1.08e+04    -  1.00e+00 1.00e+00h  1
+   2  0.0000000e+00 7.57e-02 0.00e+00  -2.5 7.49e+01    -  1.00e+00 1.00e+00h  1
+   3  0.0000000e+00 2.91e-11 0.00e+00  -5.7 4.46e-06    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 3
+
+                                   (scaled)                 (unscaled)
+Objective...............:   0.0000000000000000e+00    0.0000000000000000e+00
+Dual infeasibility......:   0.0000000000000000e+00    0.0000000000000000e+00
+Constraint violation....:   2.9103830456733704e-11    2.9103830456733704e-11
+Variable bound violation:   0.0000000000000000e+00    0.0000000000000000e+00
+Complementarity.........:   0.0000000000000000e+00    0.0000000000000000e+00
+Overall NLP error.......:   2.9103830456733704e-11    2.9103830456733704e-11
+
+
+Number of objective function evaluations             = 4
+Number of objective gradient evaluations             = 4
+Number of equality constraint evaluations            = 4
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 4
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 3
+Total seconds in IPOPT                               = 0.000
+
+EXIT: Optimal Solution Found.</code></pre><p>Update all the start values in the model.</p><pre><code class="language-julia hljs">set_start_values(m)</code></pre><p>Define a set of prices and an objective function:</p><pre><code class="language-julia hljs"># Prices and objective function.
+prices = Dict(
+    :ethane_feed  =&gt; 10.0,
+    :propane_feed =&gt; 15.0,
+    :c2h4_prod    =&gt; 40.0,
+    :c3h6_prod    =&gt; 30.0,
+    :c4s_prod     =&gt; 28.0,
+    :pygas_prod   =&gt; 23.0,
+    :offgas_prod  =&gt; 25.0
+    )
+map!(p -&gt; p/100.0, values(prices))  # Convert from cents/lb to #/lb
+
+costs = @expression(m, m[:ethhdr_ethfd_mass]  * prices[:ethane_feed] +
+                       m[:prohdr_profd_mass]  * prices[:propane_feed])
+sales = @expression(m, m[:c2s_c2h4p_mass]     * prices[:c2h4_prod] +
+                       m[:c3s_c3h6p_mass]     * prices[:c3h6_prod] +
+                       m[:dc3_c4sp_mass]      * prices[:c4s_prod]  +
+                       m[:quench_hpygas_mass] * prices[:pygas_prod] +
+                       m[:cgc_lpygas_mass]    * prices[:pygas_prod] +
+                       m[:ctdc1_offgas_mass]  * prices[:offgas_prod])
+@objective(m, Max, sales - costs);</code></pre><p class="math-container">\[ 0.4 c2s\_c2h4p\_mass + 0.3 c3s\_c3h6p\_mass + 0.28 dc3\_c4sp\_mass + 0.23 quench\_hpygas\_mass + 0.23 cgc\_lpygas\_mass + 0.25 ctdc1\_offgas\_mass - 0.1 ethhdr\_ethfd\_mass - 0.15 prohdr\_profd\_mass \]</p><p>Make the ethane and propane feed flow rates degrees of freedom.</p><pre><code class="language-julia hljs">@specs begin
+    -ethhdr_ethfd_mass
+    -prohdr_profd_mass
+end
+dof = [m[:ethhdr_ethfd_mass], m[:prohdr_profd_mass]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2-element Vector{VariableRef}:
+ ethhdr_ethfd_mass
+ prohdr_profd_mass</code></pre><p>Add some variable bounds.</p><pre><code class="language-julia hljs">@bounds begin
+    0.0 &lt; ethhdr_ethfd_mass &lt; 2.0e5
+    0.0 &lt; prohdr_profd_mass &lt; 2.0e5
+    f1f5_n_furn &lt; 5.0
+    0.0 &lt; f1f5_pro_n_furn &lt; 3.0
+    1.0 &lt; f1f5_eth_n_furn
+end
+print_bounds(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">              Name               Fix      Value          Lower          Upper          Start
+--------------------------------|---|--------------|--------------|--------------|--------------|
+ethhdr_ethfd_mass                                  |             0|        200000|         80000|
+prohdr_profd_mass                                  |             0|        200000|         34000|
+f1f5_eth_n_furn                                    |             1|              |      4.182015|
+f1f5_pro_n_furn                                    |             0|             3|       1.08349|
+f1f5_n_furn                                        |              |             5|      5.265505|
+5 variables</code></pre><p>Solve the optimization problem.</p><pre><code class="language-julia hljs">@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:      958
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:      171
+
+Total number of variables............................:      364
+                     variables with only lower bounds:        1
+                variables with lower and upper bounds:        3
+                     variables with only upper bounds:        1
+Total number of equality constraints.................:      362
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  2.7446597e+04 3.16e-01 1.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  2.7633218e+04 3.02e-01 2.00e+01  -1.0 2.64e+04    -  8.41e-01 4.34e-02f  1
+   2  2.7629509e+04 3.01e-01 5.10e+03  -1.0 6.27e+03    -  9.57e-01 4.05e-03h  1
+   3  2.7628519e+04 3.00e-01 5.12e+03  -1.0 1.13e+05    -  2.67e-01 1.31e-03h 10
+   4  2.7628413e+04 3.00e-01 5.13e+03  -1.0 1.57e+05    -  2.38e-01 2.35e-04h 12
+   5  2.7628334e+04 3.00e-01 5.17e+03  -1.0 1.69e+05    -  5.51e-01 2.18e-04h 12
+   6  2.7628287e+04 3.00e-01 5.17e+03  -1.0 1.87e+05    -  2.79e-01 1.97e-04h 12
+   7  2.7628238e+04 3.00e-01 5.18e+03  -1.0 1.86e+05    -  5.91e-01 1.98e-04h 12
+   8  2.7628184e+04 3.00e-01 5.19e+03  -1.0 1.82e+05    -  2.73e-01 2.02e-04h 12
+   9  2.7628128e+04 3.00e-01 5.21e+03  -1.0 1.81e+05    -  1.00e+00 2.03e-04h 12
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  2.7628061e+04 3.00e-01 5.21e+03  -1.0 1.75e+05    -  2.39e-01 2.10e-04h 12
+  11  2.7627991e+04 3.00e-01 5.23e+03  -1.0 1.73e+05    -  1.00e+00 2.12e-04h 12
+  12  2.7627904e+04 3.00e-01 5.23e+03  -1.0 1.65e+05    -  2.55e-01 2.23e-04h 12
+  13  2.7440300e+04 6.53e+03 9.91e+03  -1.0 1.62e+05    -  1.00e+00 4.63e-01w  1
+  14  2.7378508e+04 6.00e+03 9.12e+03  -1.0 1.18e+04    -  1.00e+00 8.08e-02w  1
+  15  2.6615570e+04 7.65e+01 8.34e+02  -1.0 4.44e+03    -  9.94e-01 1.00e+00w  1
+  16  2.6615578e+04 2.24e-04 9.86e-05  -1.0 1.18e+00    -  1.00e+00 1.00e+00h  1
+  17  2.6615778e+04 8.08e-05 2.35e-05  -3.8 1.42e+01    -  1.00e+00 1.00e+00f  1
+  18  2.6615778e+04 9.82e-11 4.27e-11  -5.7 1.54e-02    -  1.00e+00 1.00e+00h  1
+  19  2.6615778e+04 2.91e-11 1.46e-11  -8.6 2.63e-04    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 19
+
+                                   (scaled)                 (unscaled)
+Objective...............:  -2.6615777991641829e+04    2.6615777991641829e+04
+Dual infeasibility......:   1.4551915228366852e-11    1.4551915228366852e-11
+Constraint violation....:   2.9103830456733704e-11    2.9103830456733704e-11
+Variable bound violation:   4.9999513862530875e-08    4.9999513862530875e-08
+Complementarity.........:   2.5059491855751081e-09    2.5059491855751081e-09
+Overall NLP error.......:   3.6883370376915635e-10    2.5059491855751081e-09
+
+
+Number of objective function evaluations             = 148
+Number of objective gradient evaluations             = 20
+Number of equality constraint evaluations            = 148
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 20
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 19
+Total seconds in IPOPT                               = 0.031
+
+EXIT: Optimal Solution Found.</code></pre><p>Print the values of the degrees of freedom at the solution, the active bounds, and the value of the objective function.</p><pre><code class="language-julia hljs">print_vars(dof)
+print_active(m)
+eval_obj(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">26615.77799164183</code></pre><p>Update the start values.</p><pre><code class="language-julia hljs">set_start_values(m)</code></pre><p>Lower the ethane feed price to half its previous value and solve the problem again.</p><pre><code class="language-julia hljs">set_objective_coefficient(m, m[:ethhdr_ethfd_mass], 5.0/100.0)
+@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.13, running with linear solver MUMPS 5.6.0.
+
+Number of nonzeros in equality constraint Jacobian...:      958
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:      171
+
+Total number of variables............................:      364
+                     variables with only lower bounds:        1
+                variables with lower and upper bounds:        3
+                     variables with only upper bounds:        1
+Total number of equality constraints.................:      362
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  3.1743485e+04 1.20e+03 1.00e+00  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  3.2080768e+04 1.14e+03 3.24e+01  -1.0 3.00e+04    -  6.49e-01 5.18e-02f  1
+   2  3.2085297e+04 1.14e+03 4.93e+02  -1.0 1.25e+04    -  7.02e-02 2.03e-03f  1
+   3  3.2622401e+04 7.48e+01 3.61e+03  -1.0 1.27e+04    -  8.49e-01 1.00e+00f  1
+   4  3.8721705e+04 2.61e+03 1.09e+03  -1.0 9.13e+04    -  1.17e-01 9.21e-01f  1
+   5  4.0289328e+04 1.84e+03 3.22e+02  -1.0 2.72e+04    -  8.48e-01 7.96e-01f  1
+   6  4.0305004e+04 2.28e+02 3.86e+01  -1.0 2.44e+02    -  9.90e-01 8.85e-01f  1
+   7  4.0305062e+04 8.29e-03 2.03e-02  -1.0 8.05e-01    -  9.95e-01 1.00e+00h  1
+   8  4.0305262e+04 2.28e-05 8.71e-05  -3.8 1.40e+00    -  1.00e+00 1.00e+00f  1
+   9  4.0305262e+04 2.50e-11 1.50e-10  -5.7 1.34e-03    -  1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  4.0305262e+04 2.91e-11 1.46e-11  -8.6 2.59e-05    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 10
+
+                                   (scaled)                 (unscaled)
+Objective...............:  -4.0305262454300144e+04    4.0305262454300144e+04
+Dual infeasibility......:   1.4551915228366852e-11    1.4551915228366852e-11
+Constraint violation....:   2.9103830456733704e-11    2.9103830456733704e-11
+Variable bound violation:   4.9999688833679556e-08    4.9999688833679556e-08
+Complementarity.........:   2.5059286537550842e-09    2.5059286537550842e-09
+Overall NLP error.......:   2.4869221603694590e-10    2.5059286537550842e-09
+
+
+Number of objective function evaluations             = 11
+Number of objective gradient evaluations             = 11
+Number of equality constraint evaluations            = 11
+Number of inequality constraint evaluations          = 0
+Number of equality constraint Jacobian evaluations   = 11
+Number of inequality constraint Jacobian evaluations = 0
+Number of Lagrangian Hessian evaluations             = 10
+Total seconds in IPOPT                               = 0.016
+
+EXIT: Optimal Solution Found.</code></pre><p>The solver decreases the fresh propane feed flow rate to zero. </p><pre><code class="language-julia hljs">print_vars(dof)
+print_active(m)
+eval_obj(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">40305.262454300144</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../MassBalanceOpt/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 4 July 2023 20:12">Tuesday 4 July 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
