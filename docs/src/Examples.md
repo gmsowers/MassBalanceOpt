@@ -106,8 +106,7 @@ print_vars(m)
 
 This is an example of the use of the MassBalanceOpt package to build a simple model of an ethylene plant and solve it with `JuMP`. Here is a block diagram of the flowsheet:
 
-![](../assets/C2plant.png)
-
+![](assets/C2plant.png)
 
 ```@setup EX2
 using Pkg; Pkg.activate("..", io=devnull); push!(LOAD_PATH, "../../src");
