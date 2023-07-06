@@ -1,8 +1,8 @@
 # MassBalanceOpt.jl
 
-This is a Julia package for formulating mass balance models of chemical processes and solving them with [JuMP](https://jump.dev/). If you dont have basic knowledge of JuMP this package probably won't be of much use.
+This is a Julia package for formulating mass balance models of chemical processes and solving them with [JuMP](https://jump.dev/). If you don't have basic knowledge of JuMP this package probably won't be of much help.
 
-This package is unregistered, which mneans it's not in the Julia package registry. If you happen to discover it and want to use it, do this:
+This package is unregistered, which means it's not in the Julia package registry. If you happen to discover it and want to use it, do this:
 
 1. Start Julia, press `]` to get to the Pkg REPL, activate your desired environment, and add the package:
 ```julia
