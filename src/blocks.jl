@@ -172,7 +172,7 @@ function JuMP.set_start_values(blk::Mixer; copy_inlets::Bool=true)
     out_mass_val = max(1.0e-8, sum(get_value(blk.strm_vars[s.name][:total_mass]) for s in blk.inlets))
     set_start_value(out_vars[:total_mass], out_mass_val)
 
-    # Oulet stream mass fractions or component mass flow rates.
+    # Outlet stream mass fractions or component mass flow rates.
     mass_out = (is_frac(outlet) ? out_mass_val : 1.0)
     for c in outlet.comps
         fx_out_val = sum(get_value(blk.strm_vars[s.name][:fx][c]) *
