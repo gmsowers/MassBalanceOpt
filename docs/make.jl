@@ -1,10 +1,16 @@
 push!(LOAD_PATH,"../src/")
 using Documenter, MassBalanceOpt, JuMP
+
+if isempty(ARGS)
+    _format = Documenter.HTML(edit_link = "main")
+elseif ARGS[1] == "pdf"
+    _format = Documenter.LaTeX(platform = "tectonic")
+end
+
 makedocs(
-    sitename="MassBalanceOpt.jl",
-    format = Documenter.HTML(edit_link = "main"),
+    sitename = "MassBalanceOpt.jl",
+    format = _format,
     doctest = false,
-    # modules=MassBalanceOpt,
     pages=["Introduction" => "index.md",
            "Examples"     => "Examples.md",
            "API"          => "MassBalanceOpt.md"]
