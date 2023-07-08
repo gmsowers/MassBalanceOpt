@@ -33,4 +33,4 @@ Flowsheet(
    name=index   )
 ```
 
-Package [documentation](https://gmsowers.github.io/MassBalanceOpt/).
+Package [online documentation](https://gmsowers.github.io/MassBalanceOpt/) or as a [pdf file](docs/MassBalanceOpt.jl.pdf).
