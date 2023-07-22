@@ -28,7 +28,7 @@ julia> using MassBalanceOpt, JuMP, Ipopt, OrderedCollections
 
 5. You should now be able to create a Model and Flowsheet:
 ```julia
-julia> m = Model; fs = Flowsheet()
+julia> m = Model(Ipopt.Optimizer); fs = Flowsheet()
 Flowsheet(
    name=index   )
 ```
