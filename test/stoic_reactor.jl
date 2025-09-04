@@ -35,10 +35,10 @@ function test2()
     set_silent(m)
     optimize!(m)
     return all([ (termination_status(m) == LOCALLY_SOLVED)
-                (value(m[:arx_out1_A_massfrac]) ≈ 1.0)
+                ≈(value(m[:arx_out1_A_massfrac]), 1.0, rtol=1.0e-8)
                 ≈(value(m[:arx_out1_B_massfrac]), 0.0, rtol=1.0e-8)
                 ≈(value(m[:arx_out1_mass]), 1.0, rtol=1.0e-8)
-                ≈(value(m[:arx_extent_rx_1]), 0.0, rtol=1.0e-8)
+                ≈(value(m[:arx_extent_rx_1]), 0.0, atol=1.0e-8)
             ])
 end
 
