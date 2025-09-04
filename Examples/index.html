@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · MassBalanceOpt.jl</title><meta name="title" content="Examples · MassBalanceOpt.jl"/><meta property="og:title" content="Examples · MassBalanceOpt.jl"/><meta property="twitter:title" content="Examples · MassBalanceOpt.jl"/><meta name="description" content="Documentation for MassBalanceOpt.jl."/><meta property="og:description" content="Documentation for MassBalanceOpt.jl."/><meta property="twitter:description" content="Documentation for MassBalanceOpt.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">MassBalanceOpt.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Introduction</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Mixer,-StoicReactor,-Separator"><span>Mixer, StoicReactor, Separator</span></a></li><li><a class="tocitem" href="#Simple-Ethylene-Plant"><span>Simple Ethylene Plant</span></a></li></ul></li><li><a class="tocitem" href="../MassBalanceOpt/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/gmsowers/MassBalanceOpt" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/gmsowers/MassBalanceOpt/blob/main/docs/src/Examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Mixer,-StoicReactor,-Separator"><a class="docs-heading-anchor" href="#Mixer,-StoicReactor,-Separator">Mixer, StoicReactor, Separator</a><a id="Mixer,-StoicReactor,-Separator-1"></a><a class="docs-heading-anchor-permalink" href="#Mixer,-StoicReactor,-Separator" title="Permalink"></a></h2><p>This is an example of a simple flowsheet with a <code>Mixer</code>, <code>StoicReactor</code>, and <code>Separator</code>.</p><p>Add the package from the Julia REPL in the usual way; type <code>]</code> to enter the Pkg REPL mode and run</p><pre><code class="nohighlight hljs">pkg&gt; add MassBalanceOpt</code></pre><p>To do anything useful you&#39;ll also need three other packages:</p><pre><code class="nohighlight hljs">pkg&gt; add JuMP Ipopt OrderedCollections</code></pre><p>Then import the packages:</p><pre><code class="language-julia hljs">using MassBalanceOpt, JuMP, Ipopt, OrderedCollections</code></pre><p>Create a JuMP model and a <code>Flowsheet</code> to hold the blocks and streams:</p><pre><code class="language-julia hljs">m = Model(Ipopt.Optimizer); fs = Flowsheet();</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Flowsheet(
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · MassBalanceOpt.jl</title><meta name="title" content="Examples · MassBalanceOpt.jl"/><meta property="og:title" content="Examples · MassBalanceOpt.jl"/><meta property="twitter:title" content="Examples · MassBalanceOpt.jl"/><meta name="description" content="Documentation for MassBalanceOpt.jl."/><meta property="og:description" content="Documentation for MassBalanceOpt.jl."/><meta property="twitter:description" content="Documentation for MassBalanceOpt.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">MassBalanceOpt.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Introduction</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Mixer,-StoicReactor,-Separator"><span>Mixer, StoicReactor, Separator</span></a></li><li><a class="tocitem" href="#Simple-Ethylene-Plant"><span>Simple Ethylene Plant</span></a></li></ul></li><li><a class="tocitem" href="../MassBalanceOpt/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/gmsowers/MassBalanceOpt" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/gmsowers/MassBalanceOpt/blob/main/docs/src/Examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Mixer,-StoicReactor,-Separator"><a class="docs-heading-anchor" href="#Mixer,-StoicReactor,-Separator">Mixer, StoicReactor, Separator</a><a id="Mixer,-StoicReactor,-Separator-1"></a><a class="docs-heading-anchor-permalink" href="#Mixer,-StoicReactor,-Separator" title="Permalink"></a></h2><p>This is an example of a simple flowsheet with a <code>Mixer</code>, <code>StoicReactor</code>, and <code>Separator</code>.</p><p>Add the package from the Julia REPL in the usual way; type <code>]</code> to enter the Pkg REPL mode and run</p><pre><code class="nohighlight hljs">pkg&gt; add MassBalanceOpt</code></pre><p>To do anything useful you&#39;ll also need three other packages:</p><pre><code class="nohighlight hljs">pkg&gt; add JuMP Ipopt OrderedCollections</code></pre><p>Then import the packages:</p><pre><code class="language-julia hljs">using MassBalanceOpt, JuMP, Ipopt, OrderedCollections</code></pre><p>Create a JuMP model and a <code>Flowsheet</code> to hold the blocks and streams:</p><pre><code class="language-julia hljs">m = Model(Ipopt.Optimizer); fs = Flowsheet();</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Flowsheet(
    name=index   )</code></pre><p>Suppose we have a feed stream of pure component <code>A</code> that mixes with a recycle stream and is fed to a reactor, where the reaction <code>A =&gt; B + C</code> takes place with a specified conversion of component <code>A</code>. The reactor effluent is fed to a distillation column where component <code>C</code> and most of <code>B</code> goes overhead, with unreacted <code>A</code> and a small amount of <code>B</code> going out the bottom and back to the feed header. To create the streams we need to first make some component groups:</p><pre><code class="language-julia hljs">c_A   = @components A
 c_AB  = @components A B
 c_BC  = @components B C
@@ -22,14 +22,14 @@ feedhdr_rx_in_A_massfrac                           |              |             
 feedhdr_rx_in_B_massfrac                           |              |              |              |
 8 variables
 
-feedhdr_total_mass_balance : feedhdr_feed_mass + feedhdr_recycle_mass - feedhdr_rx_in_mass == 0
-feedhdr_A_mass_balance : feedhdr_feed_A_massfrac*feedhdr_feed_mass + feedhdr_recycle_A_massfrac*feedhdr_recycle_mass - feedhdr_rx_in_A_massfrac*feedhdr_rx_in_mass == 0
-feedhdr_B_mass_balance : feedhdr_recycle_B_massfrac*feedhdr_recycle_mass - feedhdr_rx_in_B_massfrac*feedhdr_rx_in_mass == 0
-feedhdr_feed_mass == 1
-feedhdr_feed_A_massfrac == 1
-feedhdr_recycle_mass == 1
-feedhdr_recycle_A_massfrac == 0.5
-feedhdr_recycle_B_massfrac == 0.5
+feedhdr_total_mass_balance : feedhdr_feed_mass + feedhdr_recycle_mass - feedhdr_rx_in_mass = 0
+feedhdr_A_mass_balance : feedhdr_feed_A_massfrac*feedhdr_feed_mass + feedhdr_recycle_A_massfrac*feedhdr_recycle_mass - feedhdr_rx_in_A_massfrac*feedhdr_rx_in_mass = 0
+feedhdr_B_mass_balance : feedhdr_recycle_B_massfrac*feedhdr_recycle_mass - feedhdr_rx_in_B_massfrac*feedhdr_rx_in_mass = 0
+feedhdr_feed_mass = 1
+feedhdr_feed_A_massfrac = 1
+feedhdr_recycle_mass = 1
+feedhdr_recycle_A_massfrac = 0.5
+feedhdr_recycle_B_massfrac = 0.5
 8 equations</code></pre><p>The two inlet streams to <code>feedhdr</code> have fixed flow rates and compositions that are set to default values when the block was created. The <code>recycle</code> stream flow rate and composition will eventually become free variables after the rest of the model is built, but right now we need to provide values for the fixed variables:</p><pre><code class="language-julia hljs">@values begin
     feedhdr_feed_mass          = 10_000.0
     feedhdr_recycle_mass       = 2_000.0
@@ -90,7 +90,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
          For more information visit https://github.com/coin-or/Ipopt
 ******************************************************************************
 
-This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:       50
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -127,7 +127,7 @@ Number of inequality constraint evaluations          = 0
 Number of equality constraint Jacobian evaluations   = 1
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 0
-Total seconds in IPOPT                               = 0.005
+Total seconds in IPOPT                               = 0.046
 
 EXIT: Optimal Solution Found.
               Name               Fix      Value          Lower          Upper          Start
@@ -172,7 +172,7 @@ col_B_recycle_split               ==            0.5|              |             
 @set col_B_recycle_split = 0.01
 set_start_values(col)
 @solve
-print_vars(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+print_vars(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:       99
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -238,7 +238,7 @@ col_C_product_split                               1|              |             
 21 variables</code></pre><p>We don&#39;t really want to fix <code>col_B_recycle_split</code> though. A controller will be controlling the mass fraction of <code>B</code> in the <code>recycle</code> stream to a setpoint, so we want to fix the <code>B</code> mass fraction in the <code>recycle</code> stream and free <code>col_B_recycle_split</code>. This is called &quot;flipping&quot; the specs on the two variables, and is done like this:</p><pre><code class="language-julia hljs">@specs col_B_recycle_split ~ col_recycle_B_massfrac
 @set col_recycle_B_massfrac = 0.01    # Set the mass fraction of B in the recycle stream
 @solve
-print_vars(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+print_vars(col)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:      100
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -277,7 +277,7 @@ Number of inequality constraint evaluations          = 0
 Number of equality constraint Jacobian evaluations   = 3
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 2
-Total seconds in IPOPT                               = 0.010
+Total seconds in IPOPT                               = 0.005
 
 EXIT: Optimal Solution Found.
               Name               Fix      Value          Lower          Upper          Start
@@ -305,7 +305,7 @@ col_B_recycle_split                     0.005029514|              |             
 col_C_product_split                               1|              |              |             1|
 21 variables</code></pre><p>Finally we can connect the <code>recycle</code> stream and solve the complete problem:</p><pre><code class="language-julia hljs">connect(recycle)
 @solve
-print_vars(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+print_vars(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:      110
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -345,7 +345,7 @@ Number of inequality constraint evaluations          = 0
 Number of equality constraint Jacobian evaluations   = 4
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 3
-Total seconds in IPOPT                               = 0.002
+Total seconds in IPOPT                               = 0.000
 
 EXIT: Optimal Solution Found.
               Name               Fix      Value          Lower          Upper          Start
@@ -399,11 +399,11 @@ col_B_product_split                       0.9949749|              |             
 col_B_recycle_split                     0.005025126|              |              |          0.01|
 col_C_product_split                               1|              |              |             1|
 48 variables</code></pre><h2 id="Simple-Ethylene-Plant"><a class="docs-heading-anchor" href="#Simple-Ethylene-Plant">Simple Ethylene Plant</a><a id="Simple-Ethylene-Plant-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-Ethylene-Plant" title="Permalink"></a></h2><p>This is an example of the use of the MassBalanceOpt package to build a simple model of an ethylene plant and solve it with <code>JuMP</code>. Here is a block diagram of the flowsheet:</p><p><img src="../assets/C2plant.png" alt/></p><p>Create a <code>JuMP</code> model that uses the <code>Ipopt</code> solver:</p><pre><code class="language-julia hljs">m = Model(Ipopt.Optimizer)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">A JuMP Model
-Feasibility problem with:
-Variables: 0
-Model mode: AUTOMATIC
-CachingOptimizer state: EMPTY_OPTIMIZER
-Solver name: Ipopt</code></pre><p>Create a <code>Flowsheet</code> to contain the variables and equations of the model. The default name of a flowsheet is <code>:index</code>. The <code>:index</code> flowsheet does not have a parent flowsheet.</p><pre><code class="language-julia hljs">fs = Flowsheet()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Flowsheet(
+├ solver: Ipopt
+├ objective_sense: FEASIBILITY_SENSE
+├ num_variables: 0
+├ num_constraints: 0
+└ Names registered in the model: none</code></pre><p>Create a <code>Flowsheet</code> to contain the variables and equations of the model. The default name of a flowsheet is <code>:index</code>. The <code>:index</code> flowsheet does not have a parent flowsheet.</p><pre><code class="language-julia hljs">fs = Flowsheet()</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Flowsheet(
    name=index   )</code></pre><p>The plant will have two feed streams: ethane and propane, each containing only one component. A component is simply a <code>Symbol</code>; it doesn&#39;t have any attributes like a chemical formula or molecular weight.</p><pre><code class="language-julia hljs">comps_eth_feed = @components c2h6
 comps_pro_feed = @components c3h8</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">OrderedCollections.OrderedSet{Symbol} with 1 element:
   :c3h8</code></pre><p>The feed streams are mixed with ethane and propane recycle streams. The component sets for the recycle streams are:</p><pre><code class="language-julia hljs">comps_eth_rec = @components c2h4 c2h6
@@ -440,24 +440,24 @@ prohdr_prof1f5_c3h8_massfrac                       |              |             
 prohdr_prof1f5_mapd_massfrac                       |              |              |              |
 18 variables
 
-ethhdr_total_mass_balance : ethhdr_ethfd_mass + ethhdr_ethre_mass - ethhdr_ethf1f5_mass == 0
-prohdr_total_mass_balance : prohdr_profd_mass + prohdr_prore_mass - prohdr_prof1f5_mass == 0
-ethhdr_c2h4_mass_balance : ethhdr_ethre_c2h4_massfrac*ethhdr_ethre_mass - ethhdr_ethf1f5_c2h4_massfrac*ethhdr_ethf1f5_mass == 0
-ethhdr_c2h6_mass_balance : ethhdr_ethfd_c2h6_massfrac*ethhdr_ethfd_mass + ethhdr_ethre_c2h6_massfrac*ethhdr_ethre_mass - ethhdr_ethf1f5_c2h6_massfrac*ethhdr_ethf1f5_mass == 0
-prohdr_c3h6_mass_balance : prohdr_prore_c3h6_massfrac*prohdr_prore_mass - prohdr_prof1f5_c3h6_massfrac*prohdr_prof1f5_mass == 0
-prohdr_c3h8_mass_balance : prohdr_profd_c3h8_massfrac*prohdr_profd_mass + prohdr_prore_c3h8_massfrac*prohdr_prore_mass - prohdr_prof1f5_c3h8_massfrac*prohdr_prof1f5_mass == 0
-prohdr_mapd_mass_balance : prohdr_prore_mapd_massfrac*prohdr_prore_mass - prohdr_prof1f5_mapd_massfrac*prohdr_prof1f5_mass == 0
-ethhdr_ethfd_mass == 1
-ethhdr_ethfd_c2h6_massfrac == 1
-ethhdr_ethre_mass == 1
-ethhdr_ethre_c2h4_massfrac == 0.5
-ethhdr_ethre_c2h6_massfrac == 0.5
-prohdr_profd_mass == 1
-prohdr_profd_c3h8_massfrac == 1
-prohdr_prore_mass == 1
-prohdr_prore_c3h6_massfrac == 0.3333333333333333
-prohdr_prore_c3h8_massfrac == 0.3333333333333333
-prohdr_prore_mapd_massfrac == 0.3333333333333333
+ethhdr_total_mass_balance : ethhdr_ethfd_mass + ethhdr_ethre_mass - ethhdr_ethf1f5_mass = 0
+prohdr_total_mass_balance : prohdr_profd_mass + prohdr_prore_mass - prohdr_prof1f5_mass = 0
+ethhdr_c2h4_mass_balance : ethhdr_ethre_c2h4_massfrac*ethhdr_ethre_mass - ethhdr_ethf1f5_c2h4_massfrac*ethhdr_ethf1f5_mass = 0
+ethhdr_c2h6_mass_balance : ethhdr_ethfd_c2h6_massfrac*ethhdr_ethfd_mass + ethhdr_ethre_c2h6_massfrac*ethhdr_ethre_mass - ethhdr_ethf1f5_c2h6_massfrac*ethhdr_ethf1f5_mass = 0
+prohdr_c3h6_mass_balance : prohdr_prore_c3h6_massfrac*prohdr_prore_mass - prohdr_prof1f5_c3h6_massfrac*prohdr_prof1f5_mass = 0
+prohdr_c3h8_mass_balance : prohdr_profd_c3h8_massfrac*prohdr_profd_mass + prohdr_prore_c3h8_massfrac*prohdr_prore_mass - prohdr_prof1f5_c3h8_massfrac*prohdr_prof1f5_mass = 0
+prohdr_mapd_mass_balance : prohdr_prore_mapd_massfrac*prohdr_prore_mass - prohdr_prof1f5_mapd_massfrac*prohdr_prof1f5_mass = 0
+ethhdr_ethfd_mass = 1
+ethhdr_ethfd_c2h6_massfrac = 1
+ethhdr_ethre_mass = 1
+ethhdr_ethre_c2h4_massfrac = 0.5
+ethhdr_ethre_c2h6_massfrac = 0.5
+prohdr_profd_mass = 1
+prohdr_profd_c3h8_massfrac = 1
+prohdr_prore_mass = 1
+prohdr_prore_c3h6_massfrac = 0.3333333333333333
+prohdr_prore_c3h8_massfrac = 0.3333333333333333
+prohdr_prore_mapd_massfrac = 0.3333333333333333
 18 equations</code></pre><p>Note that the feed stream flow rates and compositions are fixed at default values. The recycle stream flow rates and compositions are also fixed for now; that will be changed after the rest of the model has been built. Set the values of the fixed variables to more realistic values:</p><pre><code class="language-julia hljs">@values begin
     ethhdr_ethfd_mass = 80_000.0
     prohdr_profd_mass = 34_000.0
@@ -490,7 +490,7 @@ prohdr_prof1f5_mass                                |              |             
 prohdr_prof1f5_c3h6_massfrac                       |              |              |  0.0006410256|
 prohdr_prof1f5_c3h8_massfrac                       |              |              |     0.9948718|
 prohdr_prof1f5_mapd_massfrac                       |              |              |   0.004487179|
-18 variables</code></pre><p>Solve the model:</p><pre><code class="language-julia hljs">@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+18 variables</code></pre><p>Solve the model:</p><pre><code class="language-julia hljs">@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:       12
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -645,7 +645,7 @@ end</code></pre><p>The flow rates of ethane and propane feed per furnace are:</p
     f1f5_pro_rate = 40_000.0
 end</code></pre><p>Now that most of the fixed variables have been set, the <code>ethf1f5</code> and <code>prof1f5</code> inlet streams can be connected, which will free the inlet stream variables in the <code>f1f5</code> block and copy the start values from the upstream <code>Mixer</code> blocks into the <code>f1f5</code> block. The <code>set_start_values</code> function can then calculate the rest of the start values:</p><pre><code class="language-julia hljs">connect([ethf1f5, prof1f5])
 set_start_values(f1f5)
-@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:      153
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -816,7 +816,7 @@ end
 
 # Connect the propane recycle, and solve the model.
 connect(prore)
-@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:      954
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -856,7 +856,7 @@ Number of inequality constraint evaluations          = 0
 Number of equality constraint Jacobian evaluations   = 4
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 3
-Total seconds in IPOPT                               = 0.003
+Total seconds in IPOPT                               = 0.001
 
 EXIT: Optimal Solution Found.</code></pre><p>Update all the start values in the model.</p><pre><code class="language-julia hljs">set_start_values(m)</code></pre><p>Define a set of prices and an objective function:</p><pre><code class="language-julia hljs"># Prices and objective function.
 prices = Dict(
@@ -898,7 +898,7 @@ prohdr_profd_mass                                  |             0|        20000
 f1f5_eth_n_furn                                    |             1|              |      4.182015|
 f1f5_pro_n_furn                                    |             0|             3|       1.08349|
 f1f5_n_furn                                        |              |             5|      5.265505|
-5 variables</code></pre><p>Solve the optimization problem.</p><pre><code class="language-julia hljs">@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+5 variables</code></pre><p>Solve the optimization problem.</p><pre><code class="language-julia hljs">@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:      958
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -934,18 +934,18 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
   15  2.6615570e+04 7.65e+01 8.34e+02  -1.0 4.44e+03    -  9.94e-01 1.00e+00w  1
   16  2.6615578e+04 2.24e-04 9.86e-05  -1.0 1.18e+00    -  1.00e+00 1.00e+00h  1
   17  2.6615778e+04 8.08e-05 2.35e-05  -3.8 1.42e+01    -  1.00e+00 1.00e+00f  1
-  18  2.6615778e+04 9.82e-11 4.37e-11  -5.7 1.54e-02    -  1.00e+00 1.00e+00h  1
-  19  2.6615778e+04 2.91e-11 1.46e-11  -8.6 2.63e-04    -  1.00e+00 1.00e+00h  1
+  18  2.6615778e+04 9.82e-11 4.46e-11  -5.7 1.54e-02    -  1.00e+00 1.00e+00h  1
+  19  2.6615778e+04 5.82e-11 1.46e-11  -8.6 2.63e-04    -  1.00e+00 1.00e+00h  1
 
 Number of Iterations....: 19
 
                                    (scaled)                 (unscaled)
-Objective...............:  -2.6615777991641829e+04    2.6615777991641829e+04
+Objective...............:  -2.6615777991641837e+04    2.6615777991641837e+04
 Dual infeasibility......:   1.4551915228366852e-11    1.4551915228366852e-11
-Constraint violation....:   2.9103830456733704e-11    2.9103830456733704e-11
+Constraint violation....:   5.8207660913467407e-11    5.8207660913467407e-11
 Variable bound violation:   4.9999513862530875e-08    4.9999513862530875e-08
-Complementarity.........:   2.5059491855751184e-09    2.5059491855751184e-09
-Overall NLP error.......:   3.6883370376915775e-10    2.5059491855751184e-09
+Complementarity.........:   2.5059491855751155e-09    2.5059491855751155e-09
+Overall NLP error.......:   3.6883370376915734e-10    2.5059491855751155e-09
 
 
 Number of objective function evaluations             = 148
@@ -955,12 +955,12 @@ Number of inequality constraint evaluations          = 0
 Number of equality constraint Jacobian evaluations   = 20
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 19
-Total seconds in IPOPT                               = 0.020
+Total seconds in IPOPT                               = 0.007
 
 EXIT: Optimal Solution Found.</code></pre><p>Print the values of the degrees of freedom at the solution, the active bounds, and the value of the objective function.</p><pre><code class="language-julia hljs">print_vars(dof)
 print_active(m)
-eval_obj(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">26615.77799164183</code></pre><p>Update the start values.</p><pre><code class="language-julia hljs">set_start_values(m)</code></pre><p>Lower the ethane feed price to half its previous value and solve the problem again.</p><pre><code class="language-julia hljs">set_objective_coefficient(m, m[:ethhdr_ethfd_mass], 5.0/100.0)
-@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.14, running with linear solver MUMPS 5.6.2.
+eval_obj(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">26615.777991641837</code></pre><p>Update the start values.</p><pre><code class="language-julia hljs">set_start_values(m)</code></pre><p>Lower the ethane feed price to half its previous value and solve the problem again.</p><pre><code class="language-julia hljs">set_objective_coefficient(m, m[:ethhdr_ethfd_mass], 5.0/100.0)
+@solve</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is Ipopt version 3.14.19, running with linear solver MUMPS 5.8.1.
 
 Number of nonzeros in equality constraint Jacobian...:      958
 Number of nonzeros in inequality constraint Jacobian.:        0
@@ -993,12 +993,12 @@ iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
 Number of Iterations....: 10
 
                                    (scaled)                 (unscaled)
-Objective...............:  -4.0305262454300144e+04    4.0305262454300144e+04
+Objective...............:  -4.0305262454300137e+04    4.0305262454300137e+04
 Dual infeasibility......:   1.4551915228366852e-11    1.4551915228366852e-11
-Constraint violation....:   2.1827872842550278e-11    2.9103830456733704e-11
+Constraint violation....:   2.9103830456733704e-11    2.9103830456733704e-11
 Variable bound violation:   4.9999688833679556e-08    4.9999688833679556e-08
-Complementarity.........:   2.5059286537547691e-09    2.5059286537547691e-09
-Overall NLP error.......:   2.4869221603691462e-10    2.5059286537547691e-09
+Complementarity.........:   2.5059286537557141e-09    2.5059286537557141e-09
+Overall NLP error.......:   2.4869221603700835e-10    2.5059286537557141e-09
 
 
 Number of objective function evaluations             = 11
@@ -1008,8 +1008,8 @@ Number of inequality constraint evaluations          = 0
 Number of equality constraint Jacobian evaluations   = 11
 Number of inequality constraint Jacobian evaluations = 0
 Number of Lagrangian Hessian evaluations             = 10
-Total seconds in IPOPT                               = 0.009
+Total seconds in IPOPT                               = 0.003
 
 EXIT: Optimal Solution Found.</code></pre><p>The solver decreases the fresh propane feed flow rate to zero. </p><pre><code class="language-julia hljs">print_vars(dof)
 print_active(m)
-eval_obj(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">40305.262454300144</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../MassBalanceOpt/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Tuesday 12 March 2024 19:46">Tuesday 12 March 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+eval_obj(m)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">40305.26245430014</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Introduction</a><a class="docs-footer-nextpage" href="../MassBalanceOpt/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 4 September 2025 12:43">Thursday 4 September 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
